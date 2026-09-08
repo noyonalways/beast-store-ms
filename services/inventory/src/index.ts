@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
-import { createInventory } from "./controllers";
+import { createInventory, getInventoryById, getInventoryDetailsById, updateInventory } from "./controllers";
 
 dotenv.config();
 
@@ -12,19 +12,19 @@ app.use(cors());
 app.use(morgan("dev"));
 
 app.get("/health", (_req, res) => {
-  res.status(200).json({status: "UP"})
+  res.status(200).json({ status: "UP" });
 });
-
 
 // Inventory routes
 app.post("/inventories", createInventory);
-
+app.put("/inventories/:id", updateInventory);
+app.get("/inventories/:id", getInventoryById);
+app.get("/inventories/:id/details", getInventoryDetailsById);
 
 // 404 handler for undefined routes
 app.use((_req, res) => {
   res.status(404).json({ error: "Not Found" });
 });
-
 
 /// Error handler
 app.use((err, _req, res, _next) => {

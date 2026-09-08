@@ -35,5 +35,7 @@ model History {
   lastQuantity    Int
   newQuantity     Int
   inventoryId     String
-  inventory       Inventory  @relation(fields: [inventoryId], references: [id])
+  inventory       Inventory  @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }

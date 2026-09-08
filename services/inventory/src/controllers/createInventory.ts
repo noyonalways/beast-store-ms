@@ -14,6 +14,8 @@ const createInventory = async (
       return res.status(400).json({ error: parsedBody.error });
     }
 
+    
+
     // create inventory
     const inventory = await prisma.inventory.create({
       data: {

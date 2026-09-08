@@ -1,0 +1,179 @@
+### ==========================================
+###  Beast Store Microservices — API Tests
+###  Service: Inventory  (port 4002)
+### ==========================================
+
+### Variables
+@baseUrl = http://localhost:4002
+@inventoryId = cmtsmwofa0000v0pm74wo4wxo
+
+# @inventoryId — NOT declared statically. It is captured at runtime from the
+# "Create Inventory" response (request #2) via client.global.set(), so requests
+# #7–#12 below use a real id. Run request #2 first to populate it.
+
+### --------------------------------------------------
+### 1. Health Check
+### --------------------------------------------------
+GET {{baseUrl}}/health
+Accept: application/json
+
+> {%
+    client.test("Health check returns 200", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    client.test("Health status is UP", function () {
+        client.assert(response.body.status === "UP", "Expected status UP, got " + response.body.status);
+    });
+%}
+
+### --------------------------------------------------
+### 2. Create Inventory — valid payload
+###   Stores the returned id as {{inventoryId}} for later requests
+### --------------------------------------------------
+POST {{baseUrl}}/inventories
+Content-Type: application/json
+
+{
+  "productId": "prod_001",
+  "sku": "SKU-BEAST-001",
+  "quantity": 10
+}
+
+
+
+### --------------------------------------------------
+### 3. Create Inventory — valid payload (quantity omitted → defaults to 0)
+### --------------------------------------------------
+POST {{baseUrl}}/inventories
+Content-Type: application/json
+
+{
+  "productId": "prod_002",
+  "sku": "SKU-BEAST-002"
+}
+
+
+
+### --------------------------------------------------
+### 4. Create Inventory — missing required fields (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/inventories
+Content-Type: application/json
+
+{
+  "sku": "SKU-BEAST-003"
+}
+
+
+### --------------------------------------------------
+### 5. Create Inventory — invalid types (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/inventories
+Content-Type: application/json
+
+{
+  "productId": "prod_004",
+  "sku": "SKU-BEAST-004",
+  "quantity": "not-a-number"
+}
+
+
+
+### --------------------------------------------------
+### 6. Duplicate SKU (should be a 500 / P2002 unique constraint error)
+### --------------------------------------------------
+POST {{baseUrl}}/inventories
+Content-Type: application/json
+
+{
+  "productId": "prod_999",
+  "sku": "SKU-BEAST-001",
+  "quantity": 5
+}
+
+### ==========================================
+###  Inventory detail routes — require a real id.
+###  Run request #2 first so {{inventoryId}} is set.
+### ==========================================
+
+### --------------------------------------------------
+### 7. Get Inventory by id — returns quantity (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/inventories/{{inventoryId}}
+Accept: application/json
+
+
+
+### --------------------------------------------------
+### 8. Get Inventory details — returns history list (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/inventories/{{inventoryId}}/details
+Accept: application/json
+
+
+
+### --------------------------------------------------
+### 9. Update Inventory — actionType IN, adds to quantity (should be 200)
+### --------------------------------------------------
+PUT {{baseUrl}}/inventories/{{inventoryId}}
+Content-Type: application/json
+
+{
+  "actionType": "IN",
+  "quantity": 5
+}
+
+
+
+### --------------------------------------------------
+### 10. Update Inventory — actionType OUT, subtracts from quantity
+### --------------------------------------------------
+PUT {{baseUrl}}/inventories/{{inventoryId}}
+Content-Type: application/json
+
+{
+  "actionType": "OUT",
+  "quantity": 5
+}
+
+
+
+### --------------------------------------------------
+### 11. Update Inventory — missing actionType (should be 400)
+### --------------------------------------------------
+PUT {{baseUrl}}/inventories/{{inventoryId}}
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+
+
+
+### --------------------------------------------------
+### 12. Update Inventory — invalid actionType value (should be 400)
+### --------------------------------------------------
+PUT {{baseUrl}}/inventories/{{inventoryId}}
+Content-Type: application/json
+
+{
+  "actionType": "INVALID",
+  "quantity": 5
+}
+
+
+
+### --------------------------------------------------
+### 13. Get unknown inventory id (should be 404)
+### --------------------------------------------------
+GET {{baseUrl}}/inventories/does-not-exist
+Accept: application/json
+
+
+
+### --------------------------------------------------
+### 14. Undefined route (should be 404)
+### --------------------------------------------------
+GET {{baseUrl}}/nonexistent
+Accept: application/json
+
