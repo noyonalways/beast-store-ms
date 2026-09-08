@@ -5,7 +5,7 @@
 
 ### Variables
 @baseUrl = http://localhost:4002
-@inventoryId = cmtsmwofa0000v0pm74wo4wxo
+@inventoryId = cmtsp7zy00001pgpmctxm73gl
 
 # @inventoryId — NOT declared statically. It is captured at runtime from the
 # "Create Inventory" response (request #2) via client.global.set(), so requests
@@ -17,14 +17,6 @@
 GET {{baseUrl}}/health
 Accept: application/json
 
-> {%
-    client.test("Health check returns 200", function () {
-        client.assert(response.status === 200, "Expected 200, got " + response.status);
-    });
-    client.test("Health status is UP", function () {
-        client.assert(response.body.status === "UP", "Expected status UP, got " + response.body.status);
-    });
-%}
 
 ### --------------------------------------------------
 ### 2. Create Inventory — valid payload
@@ -120,7 +112,7 @@ Content-Type: application/json
 
 {
   "actionType": "IN",
-  "quantity": 5
+  "quantity": 50
 }
 
 

@@ -1,0 +1,121 @@
+### ==========================================
+###  Beast Store Microservices — API Tests
+###  Service: Product  (port 4001)
+### ==========================================
+
+### Variables
+@baseUrl = http://localhost:4001
+@productId = cmtsp7zxn000170pm5srgnwy2
+
+# @productId — NOT declared statically. It is captured at runtime from the
+# "Create Product" response (request #2) via client.global.set(), so requests
+# #8–#9 below use a real id. Run request #2 first to populate it.
+
+### --------------------------------------------------
+### 1. Health Check
+### --------------------------------------------------
+GET {{baseUrl}}/health
+Accept: application/json
+
+
+### --------------------------------------------------
+### 2. Create Product — valid payload (minimal)
+###   Stores the returned id as {{productId}} for later requests
+### --------------------------------------------------
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "sku": "SKU-BEAST-001",
+  "name": "Beast T-Shirt"
+}
+
+
+
+### --------------------------------------------------
+### 3. Create Product — full valid payload (price / status / description)
+### --------------------------------------------------
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "sku": "SKU-BEAST-002",
+  "name": "Beast Hoodie",
+  "description": "A warm hoodie with the Beast logo",
+  "price": 49.99,
+  "status": "PUBLISHED"
+}
+
+### --------------------------------------------------
+### 4. Create Product — missing required fields (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Missing SKU"
+}
+
+### --------------------------------------------------
+### 5. Create Product — invalid types (price as string, should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "sku": "SKU-BEAST-003",
+  "name": "Invalid Price",
+  "price": "not-a-number"
+}
+
+### --------------------------------------------------
+### 6. Create Product — invalid status value (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "sku": "SKU-BEAST-004",
+  "name": "Invalid Status",
+  "status": "INVALID_STATUS"
+}
+
+### --------------------------------------------------
+### 7. Create Product — duplicate SKU (should be 409)
+### --------------------------------------------------
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "sku": "SKU-BEAST-001",
+  "name": "Duplicate SKU"
+}
+
+### ==========================================
+###  Product detail & list routes.
+###  Run request #2 first so {{productId}} is set.
+### ==========================================
+
+### --------------------------------------------------
+### 8. Get Product by id — returns details + stock info (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/products/{{productId}}
+Accept: application/json
+
+### --------------------------------------------------
+### 9. Get Product by id — unknown id (should be 404)
+### --------------------------------------------------
+GET {{baseUrl}}/products/does-not-exist
+Accept: application/json
+
+### --------------------------------------------------
+### 10. Get Products — list all (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/products
+Accept: application/json
+
+### --------------------------------------------------
+### 11. Undefined route (should be 404)
+### --------------------------------------------------
+GET {{baseUrl}}/nonexistent
+Accept: application/json

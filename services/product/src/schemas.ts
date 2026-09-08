@@ -1,0 +1,10 @@
+import z from "zod";
+import { Status } from "../generated/prisma/enums";
+
+export const ProductCreateDTOSchema = z.object({
+  sku: z.string().min(3).max(24),
+  name: z.string().min(3).max(255),
+  description: z.string().max(1000).optional(),
+  price: z.number().optional().default(0),
+  status: z.enum(Status).default(Status.DRAFT),
+})
