@@ -21,11 +21,14 @@ app.get("/health", (_req, res) => {
 });
 
 app.use((req, res, next) => {
-  const allowedOrigin = ["http://localhost:4000", "http:127.0.0.1:4000"];
-  const origin = req.headers.origin || "";
+  const allowedOrigin = ["http://localhost:4000", "http://127.0.0.1:4000"];
+  const origin = req.headers.origin;
 
-  if (allowedOrigin.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  // Allow internal service-to-service calls, which carry no Origin header
+  if (!origin || allowedOrigin.includes(origin)) {
+    if (origin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
     next();
   } else {
     res.status(403).json({
