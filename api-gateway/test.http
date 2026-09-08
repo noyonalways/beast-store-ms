@@ -1,0 +1,112 @@
+### ==========================================
+###  Beast Store Microservices — API Gateway Tests
+###  Gateway: API Gateway  (port 4000)
+###  Proxies to: Product (4001), Inventory (4002)
+###
+###  NOTE: The gateway exposes every route under the /api prefix and forwards
+###  requests to the upstream services. Start the upstream services first,
+###  then run these against the gateway.
+### ==========================================
+
+### Variables
+@baseUrl = http://localhost:4000
+@productId  = cmtsuhmwz000270pmk7j2d5eq
+@inventoryId = cmtsuhmxz0004pgpm70e15rzm
+
+# @productId / @inventoryId — NOT declared statically. They are captured at
+# runtime from the corresponding "Create" response (requests #3 and #5) via
+# client.global.set(), so the id-based requests (#4, #6–#9) use real ids.
+# Run requests #3 and #5 first to populate them.
+
+### --------------------------------------------------
+### 1. Health Check
+### --------------------------------------------------
+GET {{baseUrl}}/health
+Accept: application/json
+
+
+### --------------------------------------------------
+### 2. Undefined gateway route (should be 404)
+### --------------------------------------------------
+GET {{baseUrl}}/nonexistent
+Accept: application/json
+
+
+### ==========================================
+###  PRODUCT routes  → proxied to http://localhost:4001
+### ==========================================
+
+### --------------------------------------------------
+### 3. Create Product — valid payload (minimal)
+###   Stores the returned id as {{productId}} for later requests
+### --------------------------------------------------
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "sku": "SKU-GATEWAY-001",
+  "name": "Beast T-Shirt (via Gateway)"
+}
+
+
+### --------------------------------------------------
+### 4. Get Product by id — returns details (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/api/products/{{productId}}
+Accept: application/json
+
+
+### --------------------------------------------------
+### 5. Get Products — list all (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/api/products
+Accept: application/json
+
+
+### ==========================================
+###  INVENTORY routes  → proxied to http://localhost:4002
+### ==========================================
+
+### --------------------------------------------------
+### 6. Update Inventory — a real inventory id is required.
+###   Use any existing inventory id (create one via the
+###   Inventory service test file if needed). Stores the
+###   id as {{inventoryId}}.
+### --------------------------------------------------
+PUT {{baseUrl}}/api/inventories/{{inventoryId}}
+Content-Type: application/json
+
+{
+  "actionType": "IN",
+  "quantity": 25
+}
+
+
+### --------------------------------------------------
+### 7. Update Inventory — OUT, subtracts from quantity
+### --------------------------------------------------
+PUT {{baseUrl}}/api/inventories/{{inventoryId}}
+Content-Type: application/json
+
+{
+  "actionType": "OUT",
+  "quantity": 5
+}
+
+
+### --------------------------------------------------
+### 8. Get Inventory details — returns history list (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/api/inventories/{{inventoryId}}/details
+Accept: application/json
+
+
+### --------------------------------------------------
+### 9. Update Inventory — missing actionType (should be 400)
+### --------------------------------------------------
+PUT {{baseUrl}}/api/inventories/{{inventoryId}}
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
