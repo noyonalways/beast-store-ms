@@ -18,6 +18,9 @@ export const createHandler = (
         method,
         url,
         data: req.body,
+        headers: {
+          origin: "http://localhost:4000"
+        }
       });
 
       res.json(data);
