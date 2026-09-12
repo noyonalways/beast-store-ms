@@ -18,8 +18,8 @@ model User {
   authUserId String @unique
   email String
   name String
-  address String
-  phone String
+  address String?
+  phone String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
