@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
+import { createUser, getUserById } from "./controllers";
 
 
 dotenv.config();
@@ -33,7 +34,8 @@ app.get("/health", (_req, res) => {
 // });
 
 // User routes
-
+app.post("/users", createUser);
+app.get("/users/:id", getUserById);
 
 // 404 handler for undefined routes
 app.use((_req, res) => {
