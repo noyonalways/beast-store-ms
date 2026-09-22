@@ -28,7 +28,7 @@ const createLoginHistory = async (info: LoginHistory) => {
 
 const userLogin = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const ipAddress = req.headers['x-forwarded-for'] || req.ip || '';
+    const ipAddress = typeof req.headers['x-forwarded-for'] === 'string' ? req.headers['x-forwarded-for'] : req.ip || '';
     const userAgent = req.headers['user-agent'] || '';
 
     // Validate request body
@@ -44,22 +44,46 @@ const userLogin = async (req: Request, res: Response, next: NextFunction) => {
       },
     });
     if (!user) {
+      await createLoginHistory({
+        userId: 'Guest',
+        ipAddress: ipAddress,
+        userAgent: userAgent,
+        attempt: LoginAttempt.FAILED,
+      });
       return res.status(401).json({ error: "Invalid credentials" })
     }
 
     // compare the password
     const isMatched = await bcryptjs.compare(parsedBody.data.password, user.password);
     if (!isMatched) {
+      await createLoginHistory({
+        userId: user.id,
+        ipAddress: ipAddress,
+        userAgent: userAgent,
+        attempt: LoginAttempt.FAILED,
+      });
       return res.status(401).json({ error: "Invalid credentials" })
     }
 
     // check if the user is verified
     if (!user.verified) {
+      await createLoginHistory({
+        userId: user.id,
+        ipAddress: ipAddress,
+        userAgent: userAgent,
+        attempt: LoginAttempt.FAILED,
+      });
       return res.status(401).json({ error: "User not verified" })
     }
 
     // check if the user account is active
     if (user.status !== "ACTIVE") {
+      await createLoginHistory({
+        userId: user.id,
+        ipAddress: ipAddress,
+        userAgent: userAgent,
+        attempt: LoginAttempt.FAILED,
+      });
       return res.status(400).json({ message: `Your account is ${user.status}` })
     }
 
@@ -71,6 +95,12 @@ const userLogin = async (req: Request, res: Response, next: NextFunction) => {
       role: user.role,
     }
     const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" });
+    await createLoginHistory({
+      userId: user.id,
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      attempt: LoginAttempt.SUCCESS,
+    });
 
     return res.status(200).json({ accessToken });
   } catch (error) {

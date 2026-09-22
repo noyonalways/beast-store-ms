@@ -25,20 +25,19 @@ enum AccountStatus {
 }
 
 model AuthUser {
-  id        String        @id @default(cuid())
-  name      String
-  email     String        @unique
-  password  String
-  role      Role          @default(USER)
-  verified  Boolean       @default(false)
-  status    AccountStatus @default(PENDING)
-  loginHistories LoginHistory[]
+  id                String             @id @default(cuid())
+  name              String
+  email             String             @unique
+  password          String
+  role              Role               @default(USER)
+  verified          Boolean            @default(false)
+  status            AccountStatus      @default(PENDING)
+  loginHistories    LoginHistory[]
   verificationCodes VerificationCode[]
 
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
-
 
 enum LoginAttempt {
   SUCCESS
@@ -46,15 +45,15 @@ enum LoginAttempt {
 }
 
 model LoginHistory {
-  id String @id @default(cuid())
-  userId String
-  user AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String       @id @default(cuid())
+  userId    String
+  user      AuthUser     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ipAddress String?
   userAgent String?
-  attempt LoginAttempt @default(SUCCESS)
-  loginAt DateTime @default(now())
-  logoutAt DateTime?
-  
+  attempt   LoginAttempt @default(SUCCESS)
+  loginAt   DateTime     @default(now())
+  logoutAt  DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -75,14 +74,14 @@ enum VerificationCodeType {
 }
 
 model VerificationCode {
-  id String @id @default(cuid())
-  userId String
-  user AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status VerificationStatus @default(PENDING)
-  code String
-  type VerificationCodeType @default(ACCOUNT_ACTIVATION)
-  issuedAt DateTime @default(now())
-  expiresAt DateTime
+  id         String               @id @default(cuid())
+  userId     String
+  user       AuthUser             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     VerificationStatus   @default(PENDING)
+  code       String
+  type       VerificationCodeType @default(ACCOUNT_ACTIVATION)
+  issuedAt   DateTime             @default(now())
+  expiresAt  DateTime
   verifiedAt DateTime?
 
   createdAt DateTime @default(now())

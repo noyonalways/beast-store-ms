@@ -1,15 +1,16 @@
 ### ==========================================
 ###  Beast Store Microservices — API Tests
-###  Service: Product  (port 4001)
+###  Service: User  (port 4004)
 ### ==========================================
 
 ### Variables
-@baseUrl = http://localhost:4001
-@productId = cmtsp7zxn000170pm5srgnwy2
+@baseUrl = http://localhost:4004
 
-# @productId — NOT declared statically. It is captured at runtime from the
-# "Create Product" response (request #2) via client.global.set(), so requests
-# #8–#9 below use a real id. Run request #2 first to populate it.
+# @userId — NOT declared statically. It is resolved at runtime from the
+# "Create User" response (request #2) via the request-variable reference
+# {{createUser.response.body.$.id}}, so requests #7–#10 below use a real id.
+# Run request #2 first to populate it.
+@userId = {{createUser.response.body.$.id}}
 
 ### --------------------------------------------------
 ### 1. Health Check
@@ -19,99 +20,96 @@ Accept: application/json
 
 
 ### --------------------------------------------------
-### 2. Create Product — valid payload (minimal)
-###   Stores the returned id as {{productId}} for later requests
+### 2. Create User — valid payload (minimal)
+###   Stores the returned id as {{userId}} for later requests
 ### --------------------------------------------------
-POST {{baseUrl}}/products
+# @name createUser
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "sku": "SKU-BEAST-001",
-  "name": "Beast T-Shirt"
+  "authUserId": "auth-user-001",
+  "email": "tester@beast-store.dev",
+  "name": "Beast Tester"
 }
 
-
+> {% client.global.set("userId", response.body.id); %}
 
 ### --------------------------------------------------
-### 3. Create Product — full valid payload (price / status / description)
+### 3. Create User — full valid payload (address / phone)
 ### --------------------------------------------------
-POST {{baseUrl}}/products
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "sku": "SKU-BEAST-002",
-  "name": "Beast Hoodie",
-  "description": "A warm hoodie with the Beast logo",
-  "price": 49.99,
-  "status": "PUBLISHED"
-}
-
-### --------------------------------------------------
-### 4. Create Product — missing required fields (should be 400)
-### --------------------------------------------------
-POST {{baseUrl}}/products
-Content-Type: application/json
-
-{
-  "name": "Missing SKU"
+  "authUserId": "auth-user-002",
+  "email": "tester2@beast-store.dev",
+  "name": "Beast Shopper",
+  "address": "123 Beast Street",
+  "phone": "+8801700000000"
 }
 
 ### --------------------------------------------------
-### 5. Create Product — invalid types (price as string, should be 400)
+### 4. Create User — missing required fields (should be 400)
 ### --------------------------------------------------
-POST {{baseUrl}}/products
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "sku": "SKU-BEAST-003",
-  "name": "Invalid Price",
-  "price": "not-a-number"
+  "email": "missing@beast-store.dev"
 }
 
 ### --------------------------------------------------
-### 6. Create Product — invalid status value (should be 400)
+### 5. Create User — invalid email format (should be 400)
 ### --------------------------------------------------
-POST {{baseUrl}}/products
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "sku": "SKU-BEAST-004",
-  "name": "Invalid Status",
-  "status": "INVALID_STATUS"
+  "authUserId": "auth-user-003",
+  "email": "not-an-email",
+  "name": "Bad Email"
 }
 
 ### --------------------------------------------------
-### 7. Create Product — duplicate SKU (should be 409)
+### 6. Create User — duplicate authUserId (should be 400)
 ### --------------------------------------------------
-POST {{baseUrl}}/products
+POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "sku": "SKU-BEAST-001",
-  "name": "Duplicate SKU"
+  "authUserId": "auth-user-001",
+  "email": "duplicate@beast-store.dev",
+  "name": "Duplicate User"
 }
 
 ### ==========================================
-###  Product detail & list routes.
-###  Run request #2 first so {{productId}} is set.
+###  User detail routes.
+###  Run request #2 first so {{userId}} is set.
 ### ==========================================
 
 ### --------------------------------------------------
-### 8. Get Product by id — returns details + stock info (should be 200)
+### 7. Get User by id — internal id (should be 200)
 ### --------------------------------------------------
-GET {{baseUrl}}/products/{{productId}}
+GET {{baseUrl}}/users/{{userId}}
 Accept: application/json
 
 ### --------------------------------------------------
-### 9. Get Product by id — unknown id (should be 404)
+### 8. Get User by authUserId (should be 200)
 ### --------------------------------------------------
-GET {{baseUrl}}/products/does-not-exist
+GET {{baseUrl}}/users/auth-user-001?field=authUserId
 Accept: application/json
 
 ### --------------------------------------------------
-### 10. Get Products — list all (should be 200)
+### 9. Get User by id — unknown id (should be 404)
 ### --------------------------------------------------
-GET {{baseUrl}}/products
+GET {{baseUrl}}/users/does-not-exist
+Accept: application/json
+
+### --------------------------------------------------
+### 10. Get User by id — invalid field value (should be 400)
+### --------------------------------------------------
+GET {{baseUrl}}/users/{{userId}}?field=email
 Accept: application/json
 
 ### --------------------------------------------------
