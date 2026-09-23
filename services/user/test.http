@@ -10,7 +10,7 @@
 # "Create User" response (request #2) via the request-variable reference
 # {{createUser.response.body.$.id}}, so requests #7–#10 below use a real id.
 # Run request #2 first to populate it.
-@userId = {{createUser.response.body.$.id}}
+@userId = cmue9s9mt0000cspmno15n0sd
 
 ### --------------------------------------------------
 ### 1. Health Check
@@ -32,8 +32,6 @@ Content-Type: application/json
   "email": "tester@beast-store.dev",
   "name": "Beast Tester"
 }
-
-> {% client.global.set("userId", response.body.id); %}
 
 ### --------------------------------------------------
 ### 3. Create User — full valid payload (address / phone)
@@ -97,7 +95,7 @@ Accept: application/json
 ### --------------------------------------------------
 ### 8. Get User by authUserId (should be 200)
 ### --------------------------------------------------
-GET {{baseUrl}}/users/auth-user-001?field=authUserId
+GET {{baseUrl}}/users/{{userId}}?filed=authUserId
 Accept: application/json
 
 ### --------------------------------------------------
@@ -109,7 +107,7 @@ Accept: application/json
 ### --------------------------------------------------
 ### 10. Get User by id — invalid field value (should be 400)
 ### --------------------------------------------------
-GET {{baseUrl}}/users/{{userId}}?field=email
+GET {{baseUrl}}/users/{{userId}}?filed=email
 Accept: application/json
 
 ### --------------------------------------------------

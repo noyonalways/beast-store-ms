@@ -14,3 +14,8 @@ export const UserLoginDTOSchema = z.object({
 export const AccessTokenDTOSchema = z.object({
   accessToken: z.string(),
 })
+
+export const EmailVerificationDTOSchema = z.object({
+  email: z.string().email(),
+  code: z.string(),
+});

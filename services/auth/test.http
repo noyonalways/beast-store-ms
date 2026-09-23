@@ -1,15 +1,17 @@
 ### ==========================================
 ###  Beast Store Microservices — API Tests
-###  Service: Product  (port 4001)
+###  Service: Auth  (port 4003)
 ### ==========================================
 
 ### Variables
-@baseUrl = http://localhost:4001
-@productId = cmtsp7zxn000170pm5srgnwy2
+@baseUrl = http://localhost:4003
+@verificationCode = 123456
 
-# @productId — NOT declared statically. It is captured at runtime from the
-# "Create Product" response (request #2) via client.global.set(), so requests
-# #8–#9 below use a real id. Run request #2 first to populate it.
+# @accessToken — NOT declared statically. It is resolved at runtime from the
+# "Login — success" response (request #11) via the request-variable reference
+# {{loginUser.response.body.$.accessToken}}, so the verify request (#12) uses a
+# real token. Run request #11 first to populate it.
+@accessToken = {{loginUser.response.body.$.accessToken}}
 
 ### --------------------------------------------------
 ### 1. Health Check
@@ -18,104 +20,231 @@ GET {{baseUrl}}/health
 Accept: application/json
 
 
-### --------------------------------------------------
-### 2. Create Product — valid payload (minimal)
-###   Stores the returned id as {{productId}} for later requests
-### --------------------------------------------------
-POST {{baseUrl}}/products
-Content-Type: application/json
-
-{
-  "sku": "SKU-BEAST-001",
-  "name": "Beast T-Shirt"
-}
-
-
-
-### --------------------------------------------------
-### 3. Create Product — full valid payload (price / status / description)
-### --------------------------------------------------
-POST {{baseUrl}}/products
-Content-Type: application/json
-
-{
-  "sku": "SKU-BEAST-002",
-  "name": "Beast Hoodie",
-  "description": "A warm hoodie with the Beast logo",
-  "price": 49.99,
-  "status": "PUBLISHED"
-}
-
-### --------------------------------------------------
-### 4. Create Product — missing required fields (should be 400)
-### --------------------------------------------------
-POST {{baseUrl}}/products
-Content-Type: application/json
-
-{
-  "name": "Missing SKU"
-}
-
-### --------------------------------------------------
-### 5. Create Product — invalid types (price as string, should be 400)
-### --------------------------------------------------
-POST {{baseUrl}}/products
-Content-Type: application/json
-
-{
-  "sku": "SKU-BEAST-003",
-  "name": "Invalid Price",
-  "price": "not-a-number"
-}
-
-### --------------------------------------------------
-### 6. Create Product — invalid status value (should be 400)
-### --------------------------------------------------
-POST {{baseUrl}}/products
-Content-Type: application/json
-
-{
-  "sku": "SKU-BEAST-004",
-  "name": "Invalid Status",
-  "status": "INVALID_STATUS"
-}
-
-### --------------------------------------------------
-### 7. Create Product — duplicate SKU (should be 409)
-### --------------------------------------------------
-POST {{baseUrl}}/products
-Content-Type: application/json
-
-{
-  "sku": "SKU-BEAST-001",
-  "name": "Duplicate SKU"
-}
-
 ### ==========================================
-###  Product detail & list routes.
-###  Run request #2 first so {{productId}} is set.
+###  Registration  →  POST /auth/register
+###  Body: { name, email, password (min 6) }
+###  On success the auth service also creates the matching
+###  profile in the User service.
 ### ==========================================
 
 ### --------------------------------------------------
-### 8. Get Product by id — returns details + stock info (should be 200)
+### 2. Register — valid payload (should be 201)
+###   Stores the returned id as {{authUserId}} for later requests
 ### --------------------------------------------------
-GET {{baseUrl}}/products/{{productId}}
-Accept: application/json
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "User 1",
+  "email": "user1@example.com",
+  "password": "pass123"
+}
 
 ### --------------------------------------------------
-### 9. Get Product by id — unknown id (should be 404)
+### 3. Register — missing required fields (should be 400)
 ### --------------------------------------------------
-GET {{baseUrl}}/products/does-not-exist
-Accept: application/json
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "missing@beast-store.dev",
+  "password": "secret123"
+}
 
 ### --------------------------------------------------
-### 10. Get Products — list all (should be 200)
+### 4. Register — invalid email format (should be 400)
 ### --------------------------------------------------
-GET {{baseUrl}}/products
-Accept: application/json
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Bad Email",
+  "email": "not-an-email",
+  "password": "secret123"
+}
 
 ### --------------------------------------------------
-### 11. Undefined route (should be 404)
+### 5. Register — password too short (min 6, should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Short Password",
+  "email": "short@beast-store.dev",
+  "password": "123"
+}
+
+### --------------------------------------------------
+### 6. Register — duplicate email (should be 409)
+###   Run request #2 first so the email already exists.
+### --------------------------------------------------
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Duplicate User",
+  "email": "tester@beast-store.dev",
+  "password": "secret123"
+}
+
+
+### ==========================================
+###  Login  →  POST /auth/login
+###  Body: { email, password }
+###  A successful login also requires verified=true and status=ACTIVE.
+###  Accounts created via /auth/register default to verified=false /
+###  status=PENDING, so they cannot log in until activated.
+### ==========================================
+
+### --------------------------------------------------
+### 7. Login — invalid email format (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "password": "secret123"
+}
+
+### --------------------------------------------------
+### 8. Login — unknown email (should be 401)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ghost@beast-store.dev",
+  "password": "secret123"
+}
+
+### --------------------------------------------------
+### 9. Login — wrong password (should be 401)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tester@beast-store.dev",
+  "password": "wrong-password"
+}
+
+### --------------------------------------------------
+### 10. Login — registered but unverified account (should be 401)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "tester@beast-store.dev",
+  "password": "secret123"
+}
+
+### --------------------------------------------------
+### 11. Login — success (should be 200)
+###   Requires an ACTIVE + verified account (activate one directly in the DB).
+###   Stores the returned token as {{accessToken}}.
+### --------------------------------------------------
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "pass123"
+}
+
+### ==========================================
+###  Verify access token  →  POST /auth/verify-access-token
+###  Body: { accessToken }
+### ==========================================
+
+### --------------------------------------------------
+### 12. Verify access token — valid token (should be 200)
+###   Run request #11 first so {{accessToken}} is set.
+### --------------------------------------------------
+POST {{baseUrl}}/auth/verify-access-token
+Content-Type: application/json
+
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXVlOXM5bXQwMDAwY3NwbW5vMTVuMHNkIiwiZW1haWwiOiJ1c2VyMUBleGFtcGxlLmNvbSIsIm5hbWUiOiJVc2VyIDEiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDE4MDE0MiwiZXhwIjoxNzkwMTgxMDQyfQ.ssEXCbOAjmSgBg8uunkct-6c_wdfxZpJYdfAyN7Xodg"
+}
+
+### --------------------------------------------------
+### 13. Verify access token — missing token (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/verify-access-token
+Content-Type: application/json
+
+{}
+
+### --------------------------------------------------
+### 14. Verify access token — malformed / invalid token (should be 500)
+###   jwt.verify throws and the error handler returns 500.
+### --------------------------------------------------
+POST {{baseUrl}}/auth/verify-access-token
+Content-Type: application/json
+
+{
+  "accessToken": "not-a-valid-jwt"
+}
+
+### ==========================================
+###  Verify email  →  POST /auth/verify-email
+###  Body: { email, code }
+###  On success the account is marked verified + ACTIVE and a
+###  confirmation email is sent via the Email service.
+### ==========================================
+
+### --------------------------------------------------
+### 15. Verify email — valid code (should be 200)
+###   Requires a real, unexpired code for a registered user.
+###   Replace {{verificationCode}} with the code from registration / DB.
+### --------------------------------------------------
+POST {{baseUrl}}/auth/verify-email
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "code": "09525"
+}
+
+### --------------------------------------------------
+### 16. Verify email — invalid code (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/verify-email
+Content-Type: application/json
+
+{
+  "email": "tester@beast-store.dev",
+  "code": "000000"
+}
+
+### --------------------------------------------------
+### 17. Verify email — unknown email (should be 404)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/verify-email
+Content-Type: application/json
+
+{
+  "email": "ghost@beast-store.dev",
+  "code": "123456"
+}
+
+### --------------------------------------------------
+### 18. Verify email — missing required fields (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/auth/verify-email
+Content-Type: application/json
+
+{
+  "email": "tester@beast-store.dev"
+}
+
+### --------------------------------------------------
+### 19. Undefined route (should be 404)
 ### --------------------------------------------------
 GET {{baseUrl}}/nonexistent
 Accept: application/json

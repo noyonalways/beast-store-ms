@@ -8,7 +8,7 @@ import { LoginAttempt } from "../../generated/prisma/enums";
 
 
 type LoginHistory = {
-  userId: string;
+  userId: string | null;
   ipAddress: string;
   userAgent: string;
   attempt: LoginAttempt;
@@ -45,12 +45,12 @@ const userLogin = async (req: Request, res: Response, next: NextFunction) => {
     });
     if (!user) {
       await createLoginHistory({
-        userId: 'Guest',
+        userId: null,
         ipAddress: ipAddress,
         userAgent: userAgent,
         attempt: LoginAttempt.FAILED,
       });
-      return res.status(401).json({ error: "Invalid credentials" })
+      return res.status(404).json({ error: "User not found" })
     }
 
     // compare the password

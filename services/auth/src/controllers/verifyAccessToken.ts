@@ -12,9 +12,9 @@ const verifyAccessToken = async (req: Request, res: Response, next: NextFunction
       return res.status(400).json({ error: parsedBody.error })
     }
     const { accessToken } = parsedBody.data;
-    const decoded = jwt.verify(accessToken, JWT_SECRET) as { id: string };
+    const decoded = jwt.verify(accessToken, JWT_SECRET) as { userId: string };
     const user = await prisma.authUser.findUnique({
-      where: { id: decoded.id },
+      where: { id: decoded.userId },
       select: {
         id: true,
         name: true,

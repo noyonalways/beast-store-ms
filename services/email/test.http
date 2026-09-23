@@ -1,0 +1,111 @@
+### ==========================================
+###  Beast Store Microservices — API Tests
+###  Service: Email  (port 4005)
+### ==========================================
+
+### Variables
+@baseUrl = http://localhost:4005
+
+### --------------------------------------------------
+### 1. Health Check
+### --------------------------------------------------
+GET {{baseUrl}}/health
+Accept: application/json
+
+
+### ==========================================
+###  Send email  →  POST /emails/send
+###  Body: { recipient, subject, body, source, sender? }
+###  sender is optional and defaults to DEFAULT_SENDER.
+###  Requires a reachable SMTP server (see SMTP_HOST / SMTP_PORT).
+### ==========================================
+
+### --------------------------------------------------
+### 2. Send email — valid payload (should be 200)
+### --------------------------------------------------
+POST {{baseUrl}}/emails/send
+Content-Type: application/json
+
+{
+  "recipient": "customer@beast-store.dev",
+  "subject": "Account Activation",
+  "body": "Your verification code is 123456",
+  "source": "user-registration"
+}
+
+### --------------------------------------------------
+### 3. Send email — valid payload with sender override (should be 200)
+### --------------------------------------------------
+POST {{baseUrl}}/emails/send
+Content-Type: application/json
+
+{
+  "recipient": "customer@beast-store.dev",
+  "subject": "Order Confirmation",
+  "body": "Your order has been confirmed.",
+  "source": "order-confirmation",
+  "sender": "orders@beast-store.dev"
+}
+
+### --------------------------------------------------
+### 4. Send email — missing required fields (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/emails/send
+Content-Type: application/json
+
+{
+  "subject": "Missing recipient and body",
+  "source": "test"
+}
+
+### --------------------------------------------------
+### 5. Send email — invalid recipient email format (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/emails/send
+Content-Type: application/json
+
+{
+  "recipient": "not-an-email",
+  "subject": "Bad recipient",
+  "body": "This should fail validation",
+  "source": "test"
+}
+
+### --------------------------------------------------
+### 6. Send email — invalid sender email format (should be 400)
+### --------------------------------------------------
+POST {{baseUrl}}/emails/send
+Content-Type: application/json
+
+{
+  "recipient": "customer@beast-store.dev",
+  "subject": "Bad sender",
+  "body": "This should fail validation",
+  "source": "test",
+  "sender": "not-an-email"
+}
+
+
+### ==========================================
+###  List emails  →  GET /emails
+###  Query: page (default 1), limit (default 10)
+### ==========================================
+
+### --------------------------------------------------
+### 7. Get Emails — list all (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/emails
+Accept: application/json
+
+### --------------------------------------------------
+### 8. Get Emails — paginated (should be 200)
+### --------------------------------------------------
+GET {{baseUrl}}/emails?page=1&limit=5
+Accept: application/json
+
+
+### --------------------------------------------------
+### 9. Undefined route (should be 404)
+### --------------------------------------------------
+GET {{baseUrl}}/nonexistent
+Accept: application/json

@@ -46,8 +46,8 @@ enum LoginAttempt {
 
 model LoginHistory {
   id        String       @id @default(cuid())
-  userId    String
-  user      AuthUser     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      AuthUser?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   ipAddress String?
   userAgent String?
   attempt   LoginAttempt @default(SUCCESS)
@@ -65,6 +65,7 @@ enum VerificationStatus {
 }
 
 enum VerificationCodeType {
+  USER_REGISTRATION
   ACCOUNT_ACTIVATION
   PASSWORD_RESET
   EMAIL_CHANGE

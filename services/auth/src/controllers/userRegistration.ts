@@ -3,7 +3,9 @@ import { UserCreateDTOSchema } from "@/schemas";
 import { Request, Response, NextFunction } from "express";
 import bcryptjs from "bcryptjs";
 import axios from "axios";
-import { USER_SERVICE_URL } from "@/config";
+import { EMAIL_SERVICE_URL, USER_SERVICE_URL } from "@/config";
+import generateVerificationCode from "@/utils/generateVerificationCode";
+import { VerificationCodeType } from "../../generated/prisma/enums";
 
 const userRegistration = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -46,17 +48,37 @@ const userRegistration = async (req: Request, res: Response, next: NextFunction)
     console.log(`User created: ${authUser.id}`);
 
     // create the user profile by calling the user service
-    await axios.post(`${USER_SERVICE_URL}/api/v1/users`, {
+    await axios.post(`${USER_SERVICE_URL}/users`, {
       name: authUser.name,
       email: authUser.email,
       authUserId: authUser.id,
     });
 
-    // todo: generate verification code
-    // todo: send verification email
+    // generate verification code
+    const verificationCode = generateVerificationCode();
+    await prisma.verificationCode.create({
+      data: {
+        userId: authUser.id,
+        type: VerificationCodeType.USER_REGISTRATION,
+        code: verificationCode,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
+      }
+    })
+    console.log(`Verification code created: ${verificationCode}`);
+    // send verification email
+    await axios.post(`${EMAIL_SERVICE_URL}/emails/send`, {
+      recipient: authUser.email,
+      subject: "Account Activation",
+      body: `Your verification code is ${verificationCode}`,
+      source: "user-registration",
+    });
+    console.log(`Verification email sent to: ${authUser.email}`);
 
     // return the user
-    return res.status(201).json(authUser);
+    return res.status(201).json({
+      message: "User registered successfully. Please check your email for verification.",
+      user: authUser,
+    });
   } catch (error) {
     next(error);
   }
