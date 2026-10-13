@@ -1,7 +1,7 @@
 ### ==========================================
 ###  Beast Store Microservices — API Gateway Tests
-###  Gateway: API Gateway  (port 4000)
-###  Proxies to: Product (4001), Inventory (4002)
+###  Gateway: API Gateway (port 4000)
+###  Proxies to: Product (4001), Inventory (4002), Auth (4003)
 ###
 ###  NOTE: The gateway exposes every route under the /api prefix and forwards
 ###  requests to the upstream services. Start the upstream services first,
@@ -12,6 +12,7 @@
 @baseUrl = http://localhost:4000
 @productId  = cmtsuhmwz000270pmk7j2d5eq
 @inventoryId = cmtsuhmxz0004pgpm70e15rzm
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXVlOXM5bXQwMDAwY3NwbW5vMTVuMHNkIiwiZW1haWwiOiJ1c2VyMUBleGFtcGxlLmNvbSIsIm5hbWUiOiJVc2VyIDEiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTg3OTczMiwiZXhwIjoxNzkxODgwNjMyfQ.6E-vAmS7V_U_49m7ZOjk9WIv-dGyHLxiTBNtKrYqdxQ
 
 # @productId / @inventoryId — NOT declared statically. They are captured at
 # runtime from the corresponding "Create" response (requests #3 and #5) via
@@ -24,21 +25,124 @@
 GET {{baseUrl}}/health
 Accept: application/json
 
-
 ### --------------------------------------------------
 ### 2. Undefined gateway route (should be 404)
 ### --------------------------------------------------
 GET {{baseUrl}}/nonexistent
 Accept: application/json
 
+### ==========================================
+###  AUTH routes  → proxied to http://localhost:4003
+### ==========================================
+
+### --------------------------------------------------
+### Auth Register
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "pass123"
+}
+
+### --------------------------------------------------
+### Auth Login
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "password": "pass123"
+}
+
+### --------------------------------------------------
+### Auth Logout
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "accessToken": "{{accessToken}}"
+}
+
+### --------------------------------------------------
+### Auth Get Current User Profile
+### --------------------------------------------------
+GET {{baseUrl}}/api/auth/whoami
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### --------------------------------------------------
+### Auth Verify Email
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/verify-email
+Content-Type: application/json
+
+{
+  "email": "user1@example.com"
+}
+
+### --------------------------------------------------
+### Auth Request Password Reset
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/request-reset
+Content-Type: application/json
+
+{
+  "email": "user1@example.com"
+}
+
+### --------------------------------------------------
+### Auth Reset Password
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "user1@example.com",
+  "resetToken": "replace-with-reset-token",
+  "newPassword": "newPass456"
+}
+
+### --------------------------------------------------
+### Verify access token — valid token (should be 200)
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/verify-access-token
+Content-Type: application/json
+
+{
+  "accessToken": "{{accessToken}}"
+}
+
+### --------------------------------------------------
+### Auth Refresh Token
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "replace-with-refresh-token"
+}
+
+### --------------------------------------------------
+### Auth Change Password
+### --------------------------------------------------
+POST {{baseUrl}}/api/auth/change-password
+Content-Type: application/json
+
+{
+  "currentPassword": "pass123",
+  "newPassword": "newPass456"
+}
 
 ### ==========================================
 ###  PRODUCT routes  → proxied to http://localhost:4001
 ### ==========================================
 
 ### --------------------------------------------------
-### 3. Create Product — valid payload (minimal)
-###   Stores the returned id as {{productId}} for later requests
+### Create Product — valid payload (minimal)
 ### --------------------------------------------------
 POST {{baseUrl}}/api/products
 Content-Type: application/json
@@ -48,65 +152,95 @@ Content-Type: application/json
   "name": "Beast T-Shirt (via Gateway)"
 }
 
-
 ### --------------------------------------------------
-### 4. Get Product by id — returns details (should be 200)
+### Get Product by id — returns details
 ### --------------------------------------------------
 GET {{baseUrl}}/api/products/{{productId}}
 Accept: application/json
 
-
 ### --------------------------------------------------
-### 5. Get Products — list all (should be 200)
+### List all Products
 ### --------------------------------------------------
 GET {{baseUrl}}/api/products
 Accept: application/json
+Authorization: Bearer {{accessToken}}
 
+### --------------------------------------------------
+### Update Product by id
+### --------------------------------------------------
+PUT {{baseUrl}}/api/products/{{productId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Updated Beast T-Shirt",
+  "sku": "SKU-GATEWAY-001-UPDATED"
+}
+
+### --------------------------------------------------
+### Delete Product by id
+### --------------------------------------------------
+DELETE {{baseUrl}}/api/products/{{productId}}
+Accept: application/json
+Authorization: Bearer {{accessToken}}
 
 ### ==========================================
 ###  INVENTORY routes  → proxied to http://localhost:4002
 ### ==========================================
 
 ### --------------------------------------------------
-### 6. Update Inventory — a real inventory id is required.
-###   Use any existing inventory id (create one via the
-###   Inventory service test file if needed). Stores the
-###   id as {{inventoryId}}.
+### Create Inventory
+### --------------------------------------------------
+POST {{baseUrl}}/api/inventories
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "productId": "{{productId}}",
+  "quantity": 100
+}
+
+### --------------------------------------------------
+### Get Inventory by id
+### --------------------------------------------------
+GET {{baseUrl}}/api/inventories/{{inventoryId}}
+Accept: application/json
+Authorization: Bearer {{accessToken}}
+
+### --------------------------------------------------
+### Update Inventory — "IN" (add)
 ### --------------------------------------------------
 PUT {{baseUrl}}/api/inventories/{{inventoryId}}
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "actionType": "IN",
   "quantity": 25
 }
 
-
 ### --------------------------------------------------
-### 7. Update Inventory — OUT, subtracts from quantity
+### Update Inventory — "OUT" (subtract)
 ### --------------------------------------------------
 PUT {{baseUrl}}/api/inventories/{{inventoryId}}
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
   "actionType": "OUT",
   "quantity": 5
 }
 
-
 ### --------------------------------------------------
-### 8. Get Inventory details — returns history list (should be 200)
+### Get Inventory details — returns history list
 ### --------------------------------------------------
 GET {{baseUrl}}/api/inventories/{{inventoryId}}/details
 Accept: application/json
-
+Authorization: Bearer {{accessToken}}
 
 ### --------------------------------------------------
-### 9. Update Inventory — missing actionType (should be 400)
+### Delete Inventory by id
 ### --------------------------------------------------
-PUT {{baseUrl}}/api/inventories/{{inventoryId}}
-Content-Type: application/json
-
-{
-  "quantity": 5
-}
+DELETE {{baseUrl}}/api/inventories/{{inventoryId}}
+Accept: application/json
+Authorization: Bearer {{accessToken}}
