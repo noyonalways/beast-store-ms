@@ -1,5 +1,5 @@
 import { Express, Request, Response } from "express";
-import config from "./config.json";
+import config from "./routes.json";
 import axios from "axios";
 import middlewares from "./middlewares";
 
@@ -14,9 +14,6 @@ export const createHandler = (
       req.params && Object.keys(req.params).forEach((param) => {
         url = url.replace(`:${param}`, String(req.params[param]))
       })
-
-      console.log("req:", req);
-      
 
       const { data } = await axios({
         method,

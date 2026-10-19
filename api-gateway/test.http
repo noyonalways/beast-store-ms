@@ -12,7 +12,8 @@
 @baseUrl = http://localhost:4000
 @productId  = cmtsuhmwz000270pmk7j2d5eq
 @inventoryId = cmtsuhmxz0004pgpm70e15rzm
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXVlOXM5bXQwMDAwY3NwbW5vMTVuMHNkIiwiZW1haWwiOiJ1c2VyMUBleGFtcGxlLmNvbSIsIm5hbWUiOiJVc2VyIDEiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MTg3OTczMiwiZXhwIjoxNzkxODgwNjMyfQ.6E-vAmS7V_U_49m7ZOjk9WIv-dGyHLxiTBNtKrYqdxQ
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXVlOXM5bXQwMDAwY3NwbW5vMTVuMHNkIiwiZW1haWwiOiJ1c2VyMUBleGFtcGxlLmNvbSIsIm5hbWUiOiJVc2VyIDEiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MjQxMDMyMywiZXhwIjoxNzkyNDExMjIzfQ.r6IfwrzjIsxU67cSoMZaW4hLYr6YB-KMwCyhDHUGmXA
+
 
 # @productId / @inventoryId — NOT declared statically. They are captured at
 # runtime from the corresponding "Create" response (requests #3 and #5) via

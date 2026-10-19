@@ -6,11 +6,15 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
   if (!req.headers["authorization"]) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  const authUrl =  AUTH_SERVICE_URL || "http://localhost:4003"
   try {
     const token = req.headers["authorization"].split(" ")[1];
-    const { data } = await axios.post(`${authUrl}/auth/verify-access-token`, {
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { data } = await axios.post(`${AUTH_SERVICE_URL}/auth/verify-access-token`, {
       accessToken: token,
+    }, {
       headers: {
         ip: req.ip,
         'user-agent': req.headers['user-agent'],
@@ -25,11 +29,17 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
 
     next();
   } catch (error) {
-    console.log('[AUTH MIDDLEWARE]:', error);
-    if (error instanceof Error) {
-      return res.status(500).json({ message: error.message });
+    // An auth rejection is the caller's fault, not ours: pass the upstream
+    // status and body through instead of masking it as a 500.
+    if (axios.isAxiosError(error) && error.response) {
+      return res
+        .status(error.response.status)
+        .json(error.response.data ?? { message: "Unauthorized" });
     }
-    return res.status(500).json({ message: "Internal Server Error" });
+
+    // No response means the auth service itself is unreachable or broken.
+    console.error('[AUTH MIDDLEWARE]:', error);
+    return res.status(503).json({ message: "Authentication service unavailable" });
   }
 }
 

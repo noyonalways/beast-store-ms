@@ -1,13 +1,14 @@
-import express, { Application } from "express";
+import path from "path";
 import dotenv from "dotenv";
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
+import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import { configureRoutes } from "./utils";
 
-dotenv.config();
 const app = express();
-
 // security middleware
 app.use(helmet());
 
@@ -28,21 +29,17 @@ app.use("/api", limiter);
 app.use(morgan("dev"));
 app.use(express.json());
 
-configureRoutes(app)
-
-// todo: auth middleware
-
+configureRoutes(app);
 
 // health check
 app.get("/health", (_req, res) => {
-  res.status(200).json({message: "API Gateway is running!"})
-})
+  res.status(200).json({ message: "API Gateway is running!" });
+});
 
 // 404 handler for undefined routes
 app.use((_req, res) => {
   res.status(404).json({ error: "Not Found" });
 });
-
 
 // error handler
 app.use((err, _req, res, _next) => {
@@ -52,5 +49,5 @@ app.use((err, _req, res, _next) => {
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
-  console.log(`API Gateway is running on port ${port}`)
-})
+  console.log(`API Gateway is running on port ${port}`);
+});
