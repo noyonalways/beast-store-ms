@@ -6,7 +6,13 @@
         {
           "path": "/products",
           "methods": [
-            "GET",
+            "GET"
+          ],
+          "middlewares": []
+        },
+        {
+          "path": "/products",
+          "methods": [
             "POST"
           ],
           "middlewares": ["auth"]

@@ -12,7 +12,7 @@
 @baseUrl = http://localhost:4000
 @productId  = cmtsuhmwz000270pmk7j2d5eq
 @inventoryId = cmtsuhmxz0004pgpm70e15rzm
-@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXVlOXM5bXQwMDAwY3NwbW5vMTVuMHNkIiwiZW1haWwiOiJ1c2VyMUBleGFtcGxlLmNvbSIsIm5hbWUiOiJVc2VyIDEiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MjQxMDMyMywiZXhwIjoxNzkyNDExMjIzfQ.r6IfwrzjIsxU67cSoMZaW4hLYr6YB-KMwCyhDHUGmXA
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbXVlOXM5bXQwMDAwY3NwbW5vMTVuMHNkIiwiZW1haWwiOiJ1c2VyMUBleGFtcGxlLmNvbSIsIm5hbWUiOiJVc2VyIDEiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MjQxMzI0MSwiZXhwIjoxNzkyNDE0MTQxfQ.88GApIO66z-fu-9HKV7DSXzANwuL7xMmjuEpKn_tSJc
 
 
 # @productId / @inventoryId — NOT declared statically. They are captured at
@@ -147,9 +147,10 @@ Content-Type: application/json
 ### --------------------------------------------------
 POST {{baseUrl}}/api/products
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
-  "sku": "SKU-GATEWAY-001",
+  "sku": "SKU-GATEWAY-002",
   "name": "Beast T-Shirt (via Gateway)"
 }
 
@@ -164,7 +165,6 @@ Accept: application/json
 ### --------------------------------------------------
 GET {{baseUrl}}/api/products
 Accept: application/json
-Authorization: Bearer {{accessToken}}
 
 ### --------------------------------------------------
 ### Update Product by id
@@ -217,7 +217,7 @@ Authorization: Bearer {{accessToken}}
 
 {
   "actionType": "IN",
-  "quantity": 25
+  "quantity": 5
 }
 
 ### --------------------------------------------------
